@@ -4,14 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Xml.Serialization;
 
 namespace ConsoleApp2
 {
     internal class Program
     {
         static int points = 0;
-        const int numberRounds = 10;
-        static string[] highscore = new string[10];
+        const int numberRounds = 2;
+        static int[] highscore = new int[10];
 
         // Array of the danish alphabet.
         static char[] characters = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
@@ -19,72 +20,79 @@ namespace ConsoleApp2
 
         // Random operator that makes a pseudo-random selection from the provided input.
         static Random rnd = new Random();
+
+        // Min main metode som referere til de andre metoder
         static void Main(string[] args)
         {
+            //highscore = Maskinskrivning.Io.LoadHighscore();
+            Console.ReadKey();
             do
             {
 
                 Console.Clear();
                 ShowHighscore();
                 Game();
-                Console.WriteLine("Try again? (Y/N)", 10, 6);
-
-                Console.Clear();
+                Show("Prøv Igen? (J/N)", 10, 8, ConsoleColor.Magenta);
             }
             while (Console.ReadKey().Key != ConsoleKey.N);
+            Console.Clear();
+        }
 
-            static void Game()
+        static void Game()
+        {
+            points = 0;
+            Console.CursorVisible = false;
+            //TODO Start a timer
+            Show($"Test din skrive hastighed.\n" +
+                "Skrive karakteren som bliver vist så hurtigt som muligt.\n" +
+                "\nTryk en hver knap for at starte.", 0, 0, ConsoleColor.Yellow);
+            Console.ReadKey(true);
+
+
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+            for (int i = 0; i < numberRounds; i++)
             {
-                points = 0;
-                Console.CursorVisible = false;
-                //TODO Start a timer
-                Show($"Test din skrive hastighed.\n" +
-                    "Skrive karakteren som bliver vist så hurtigt som muligt.\n" +
-                    "\nTryk en hver knap for at starte.", 0, 0, ConsoleColor.Yellow);
-                Console.ReadKey(true);
+                StartHere(i);
+            }
+            stopwatch.Stop();
 
+            string time = stopwatch.Elapsed.ToString(@"mm\\:ss\\.ff");
 
-                Stopwatch stopwatch = new();
-                stopwatch.Start();
-                for (int i = 0; i < numberRounds; i++)
-                {
-                    StartHere(i);
-                }
-                stopwatch.Stop();
+            Console.Clear();
+            AddToHighScore(points);
+            Show($"Du er færdig!", 10, 5, ConsoleColor.Yellow);
+            Show($"Du fik {points} points i alt!", 10, 6, ConsoleColor.Yellow);
+            Show("Tid: " + time, 10, 7, ConsoleColor.Yellow);
+            Console.Write("");
+            Console.ReadLine();
+        }
 
-                Console.Clear();
-                Show($"Du er færdig!", 0, 0, ConsoleColor.Yellow);
-                Show($"Du fik {points} points i alt!", 0, 1, ConsoleColor.Yellow);
-                Show("Tid: " + stopwatch.Elapsed.ToString("mm\\:ss\\.ff"), 0, 15, ConsoleColor.Yellow);
-                Console.Write("");
-                Console.ReadLine();
+        //Console.WriteLine(characters[0]);
+        //Console.WriteLine(characters[characters.Length - 1]);
 
-                //Console.WriteLine(characters[0]);
-                //Console.WriteLine(characters[characters.Length - 1]);
+        static void StartHere(int i)
+        {
+            //TODO make char instead of int
+            char randomChar = characters[rnd.Next(characters.Length)];
 
-                static void StartHere(int i)
-                {
-                    //TODO make char instead of int
-                    char randomChar = characters[rnd.Next(characters.Length)];
+            Stopwatch keyStopWatch = new();
+            keyStopWatch.Start();
+            //TODO Show letter same place always
+            Show(randomChar, 10 + i * 2, 5);
 
-                    //TODO Show letter same place always
-                    Show(randomChar, 20 + i * 2, 10);
-
-                    char c = GetcharInput();
-
-                    if (randomChar == Char.ToLower(c))
-                    {
-                        Console.WriteLine("");
-                        points++;
-                        Show($" \n" + $"Korrekt. Du har {points} points.", 20, 10, ConsoleColor.Green);
-                    }
-                    else
-                    {
-                        Console.WriteLine("");
-                        Show($" \n" + $"Forkert. Du har {points} points.", 20, 10, ConsoleColor.Red);
-                    }
-                    //TODO ELSE OH NO!
-                }
+            char c = GetcharInput();
+            keyStopWatch.Stop();
+            if (randomChar == Char.ToLower(c))
+            {
+                points += Math.Max(0, 3000 - (int)keyStopWatch.ElapsedMilliseconds);
+                Console.WriteLine(""); ;
+                Show($" \n" + $"Korrekt. Du har {points} points.".PadRight(30), 10, 6, ConsoleColor.Green);
+            }
+            else
+            {
+                Console.WriteLine("");
+                Show($" \n" + $"Forkert. Du har {points} points.".PadRight(30), 10, 6, ConsoleColor.Red);
             }
         }
 
@@ -109,11 +117,33 @@ namespace ConsoleApp2
 
         static void ShowHighscore()
         {
-            Show("***HIGHSCORE***", 50, 2, ConsoleColor.Cyan);
+            Show("***HIGHSCORE***", 70, 2, ConsoleColor.Cyan);
             for (int i = 0; i < highscore.Length; i++)
             {
-                Show(points, 50, 3 + i, ConsoleColor.Cyan);
+                if (highscore[i] != null)
+                {
+                    Show(highscore, 70, 13 - i, ConsoleColor.Cyan);
+                }
             }
+        }
+
+        // I've made a mistake here, but I'm not sure what.
+        static void AddToHighScore(int newPoints)
+        {
+            bool isHighScore = false;
+            foreach (var points in highscore)
+            {
+                if (newPoints > points)
+                {
+                    isHighScore = true;
+                    break;
+                }
+            }
+
+            if (!isHighScore) return;
+
+            highscore[0] = newPoints;
+            Array.Sort(highscore);
         }
     }
 }
